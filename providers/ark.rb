@@ -134,31 +134,23 @@ action :install do
                                       cp "#{Chef::Config[:file_cache_path]}/#{tarball_name}" . ;
                                       bash ./#{tarball_name} -noregister
                                     ] )
-         unless cmd.exitstatus == 0
-           Chef::Application.fatal!("Failed to extract file #{tarball_name}!")
-         end
+         cmd.error!
        when /^.*\.zip/
          cmd = shell_out(
                             %Q[ unzip "#{Chef::Config[:file_cache_path]}/#{tarball_name}" -d "#{tmpdir}" ]
                                   )
-         unless cmd.exitstatus == 0
-           Chef::Application.fatal!("Failed to extract file #{tarball_name}!")
-         end
+         cmd.error!
        when /^.*\.(tar.gz|tgz)/
          cmd = shell_out(
                             %Q[ tar xvzf "#{Chef::Config[:file_cache_path]}/#{tarball_name}" -C "#{tmpdir}" ]
                                   )
-         unless cmd.exitstatus == 0
-           Chef::Application.fatal!("Failed to extract file #{tarball_name}!")
-         end
+         cmd.error!
        end
 
        cmd = shell_out(
                           %Q[ mv "#{tmpdir}/#{app_dir_name}" "#{app_dir}" ]
                                 )
-       unless cmd.exitstatus == 0
-           Chef::Application.fatal!(%Q[ Command \' mv "#{tmpdir}/#{app_dir_name}" "#{app_dir}" \' failed ])
-         end
+       cmd.error!
        FileUtils.rm_r tmpdir
      end
      new_resource.updated_by_last_action(true)
@@ -212,9 +204,7 @@ action :install do
         converge_by(description) do
           Chef::Log.debug "Adding alternative for #{cmd}"
           install_cmd = shell_out("update-alternatives --install #{bin_path} #{cmd} #{alt_path} #{priority}")
-          unless install_cmd.exitstatus == 0
-            Chef::Application.fatal!(%Q[ set alternative failed ])
-          end
+          install_cmd.error!
         end
         new_resource.updated_by_last_action(true)
       end
@@ -227,9 +217,7 @@ action :install do
           converge_by(description) do
             Chef::Log.debug "Setting alternative for #{cmd}"
             set_cmd = shell_out("update-alternatives --set #{cmd} #{alt_path}").run_command
-            unless set_cmd.exitstatus == 0
-              Chef::Application.fatal!(%Q[ set alternative failed ])
-            end
+            set_cmd.error!
           end
           new_resource.updated_by_last_action(true)
         end
