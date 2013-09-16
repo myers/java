@@ -56,9 +56,6 @@ end
 
 def download_direct_from_oracle(tarball_name, new_resource)
   download_path = "#{Chef::Config[:file_cache_path]}/#{tarball_name}"
-  directory Chef::Config[:file_cache_path] do
-    action :create
-  end
   jdk_id = new_resource.url.scan(/\/([6789]u[0-9][0-9]?-b[0-9][0-9])\//)[0][0]
   cookie = "oraclelicensejdk-#{jdk_id}-oth-JPR=accept-securebackup-cookie;gpw_e24=http://edelivery.oracle.com"
   if node['java']['oracle']['accept_oracle_download_terms']
@@ -70,10 +67,9 @@ def download_direct_from_oracle(tarball_name, new_resource)
     p.run_action(:install)
     description = "download oracle tarball straight from the server"
     converge_by(description) do
-       Chef::Log.debug "downloading oracle tarball straight from the source"
-       cmd = shell_out!(
-                                  %Q[ curl -L --cookie "#{cookie}" #{new_resource.url} -o #{download_path} ]
-                               )
+      FileUtils.mkdir_p Chef::Config[:file_cache_path]
+      Chef::Log.debug "downloading oracle tarball straight from the source"
+      cmd = shell_out!(%Q[ curl -L --cookie "#{cookie}" #{new_resource.url} -o #{download_path} ])
     end
   else
     Chef::Application.fatal!("You must set the attribute node['java']['oracle']['accept_oracle_download_terms'] to true if you want to download directly from the oracle site!")
